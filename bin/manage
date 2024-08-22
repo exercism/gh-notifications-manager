@@ -29,7 +29,7 @@ required_tool() {
 
 require_subscriptions_file() {
     [[ -f "${subscriptions_file}" ]] || 
-        die "No '"${subscriptions_file}"' file found. Please run '${0} export' first."
+        die "No '${subscriptions_file}' file found. Please run '${0} export' first."
 }
 
 (( $# == 1 )) || help_and_exit
@@ -40,6 +40,7 @@ required_tool jq
 subscriptions_file="subscriptions.json"
 
 download_subscriptions() {
+    # shellcheck disable=SC2016
     gh api graphql --slurp --paginate -f query='
         query ($endCursor: String) {
             organization(login: "exercism") {
@@ -68,7 +69,9 @@ export_subscriptions() {
     fi
 
     echo "Exporting subscriptions..."
-    download_subscriptions | jq --argjson existing_repos $(jq -c 'map(.repo)' "${subscriptions_file}") '[.[] | . as $row | .new = ($existing_repos | any(index($row.repo)) | not)]' > "${subscriptions_file}"
+
+    existing_repos=$(jq -c 'map(.repo)' "${subscriptions_file}")
+    download_subscriptions | jq --argjson existing_repos "${existing_repos}" '[.[] | . as $row | .new = ($existing_repos | any(index($row.repo)) | not)]' > "${subscriptions_file}"
     echo "The subscriptions have been exported to the '${subscriptions_file}' file."
 }
 
