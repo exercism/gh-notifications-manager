@@ -6,19 +6,17 @@
 # The script takes one (required) argument for the action to perform:
 # - 'export': export the user's subscriptions to the 'manage-notifications.json` file
 # - 'update': update the user's subscriptions based on the 'manage-notifications.json` file
-# - 'list': list the user's subscriptions from the 'manage-notifications.json` file
-# - 'new': list the user's new subscriptions from the 'manage-notifications.json` file
 # - 'unsubscribe-new': change the status of new subscriptions from 'SUBSCRIBED' to 'UNSUBSCRIBED' in the `manage-notifications.json` file
 #
 # Example: export the subscriptions
-# bin/manage-notifications export
+# bin/manage export
 #
 # Example: update the subscriptions
-# bin/manage-notifications update
+# bin/manage update
 
 help_and_exit() {
-    echo >&2 "Manage the user's subscriptions to Exercism repos."
-    echo >&2 "Usage: ${0} <export|update|list|new|unsubscribe-new>"
+    echo >&2 "Manage the user's notifications by setting the subscription status of Exercism repos."
+    echo >&2 "Usage: ${0} <export|update|unsubscribe-new>"
     exit 1
 }
 
@@ -30,8 +28,8 @@ required_tool() {
 }
 
 require_subscriptions_file() {
-    [[ -f "${repo_subscriptions_file}" ]] || 
-        die "No '"${repo_subscriptions_file}"' file found. Please run '${0} export' first."
+    [[ -f "${subscriptions_file}" ]] || 
+        die "No '"${subscriptions_file}"' file found. Please run '${0} export' first."
 }
 
 (( $# == 1 )) || help_and_exit
@@ -39,7 +37,7 @@ require_subscriptions_file() {
 required_tool gh
 required_tool jq
 
-repo_subscriptions_file="repo-subscriptions.json"
+subscriptions_file="subscriptions.json"
 
 download_subscriptions() {
     gh api graphql --slurp --paginate -f query='
@@ -64,22 +62,14 @@ download_subscriptions() {
     }' | jq -r '[.[].data.organization.repositories.nodes[] | select(.viewerSubscription != "IGNORED")] | map({repo: .nameWithOwner, status: .viewerSubscription, new: true})'
 }
 
-list_subscriptions() {
-    require_subscriptions_file
-    jq -r -c 'map(.repo + ": " + .status) | .[]' "${repo_subscriptions_file}"
-}
-
-new_subscriptions() {
-    require_subscriptions_file
-    jq -r -c '[.[] | select(.new)] | map(.repo + ": " + .status) | .[]' "${repo_subscriptions_file}"
-}
-
 export_subscriptions() {
-    if [[ ! -f "${repo_subscriptions_file}" ]]; then
-        jq -r -c -n '[]' > "${repo_subscriptions_file}"
+    if [[ ! -f "${subscriptions_file}" ]]; then
+        jq -r -c -n '[]' > "${subscriptions_file}"
     fi
 
-    download_subscriptions | jq --argjson existing_repos $(jq -c 'map(.repo)' "${repo_subscriptions_file}") '[.[] | . as $row | .new = ($existing_repos | any(index($row.repo)) | not)]' > "${repo_subscriptions_file}"
+    echo "Exporting subscriptions..."
+    download_subscriptions | jq --argjson existing_repos $(jq -c 'map(.repo)' "${subscriptions_file}") '[.[] | . as $row | .new = ($existing_repos | any(index($row.repo)) | not)]' > "${subscriptions_file}"
+    echo "The subscriptions have been exported to the '${subscriptions_file}' file."
 }
 
 update_subscriptions() {
@@ -87,9 +77,11 @@ update_subscriptions() {
     local status
 
     require_subscriptions_file
+
+    echo "Updating subscriptions..."
     current_subscriptions=$(download_subscriptions)
 
-    jq -c -r '.[]' "${repo_subscriptions_file}" | while read -r subscription; do
+    jq -c -r '.[]' "${subscriptions_file}" | while read -r subscription; do
         repo=$(echo "${subscription}" | jq -r '.repo')
         status=$(echo "${subscription}" | jq -r '.status')
         current_status=$(echo -e "${current_subscriptions}" | jq -r --arg repo "${repo}" '(map(select(.repo == $repo)) | map(.status) | first) // "IGNORE"')
@@ -115,6 +107,8 @@ update_subscriptions() {
             *) die "Invalid status '${status}'" ;;
         esac
     done
+
+    echo "The subscriptions have been updated."
 }
 
 unsubscribe_new() {
@@ -123,17 +117,15 @@ unsubscribe_new() {
     require_subscriptions_file
 
     tmp_file=$(mktemp)
-    jq '[.[] | if .new and .status == "SUBSCRIBED" then .status = "UNSUBSCRIBED" else . end]' "${repo_subscriptions_file}" > "${tmp_file}" && mv "${tmp_file}" "${repo_subscriptions_file}"
+    jq '[.[] | if .new and .status == "SUBSCRIBED" then .status = "UNSUBSCRIBED" else . end]' "${subscriptions_file}" > "${tmp_file}" && mv "${tmp_file}" "${subscriptions_file}"
     
-    echo "The new subscriptions have their status set to unsubscribed in the 'manage-notifications.json' file."
-    echo "To update the subscriptions in GitHub, run: bin/manage-notifications update"
+    echo "The new subscriptions with status 'SUBSCRIBED' have their status changed to 'UNSUBSCRIBED' in the '${subscriptions_file}' file."
+    echo "To update the subscriptions in GitHub, run: '${0} update'"
 }
 
 case "${1}" in
     "export") export_subscriptions ;;
     "update") update_subscriptions ;;
     "unsubscribe-new") unsubscribe_new ;;
-    "list") list_subscriptions ;;
-    "new") new_subscriptions ;;
     *) help_and_exit ;;
 esac
