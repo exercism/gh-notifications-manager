@@ -1,7 +1,25 @@
 # GitHub notifications manager
 
-This repo contains a script to help manage the notifications one gets from Exercism's GitHub repos.
+This repo contains a script to help you manage the notifications you get from Exercism's GitHub repos.
 It does this by allowing you to bulk update your repo subscription status for those GitHub repos.
+
+This is especially useful when joining a GitHub team that will automatically (and undesirably) subscribe you to multiple repositories.
+By running the script before and after joining the team, you can see which repos have changed status and then revert them to their existing state.
+
+## Usage
+
+Explanations of the various functionality is detailed below, but an expected workflow looks like:
+
+```bash
+bin/manage export          # Creates a record of your subscriptions
+
+# Manually: Backup file
+# Manually: Join relevant teams
+
+bin/manage export          # Updates the record with new subscriptions
+bin/manage unsubscribe_new # Changes the state in the file to UNSUBSCRIBED for all new repos
+bin/manage update          # Updates the changes on GitHub
+```
 
 ## Prerequisites
 
@@ -19,6 +37,7 @@ bin/manage export
 ```
 
 This will create a `subscriptions.json` file containing the Exercism repos and their subscription status.
+**It is recommended that you back up this file before continuining**.
 
 ### subscriptions.json file
 
