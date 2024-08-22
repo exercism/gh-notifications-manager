@@ -11,6 +11,10 @@ By running the script before and after joining the team, you can see which repos
 Explanations of the various functionality is detailed below, but an expected workflow looks like:
 
 ```bash
+# Clone the repo
+gh repo clone exercism/gh-notifications-manager
+cd gh-notifications-manager
+
 bin/manage export          # Creates a record of your subscriptions
 
 # Manually: Backup file
@@ -67,6 +71,14 @@ It is an array of objects, where each object has the following fields:
   - `"IGNORE"`: never notified (ignored)
 - `new`: indicates if this repo wasn't in the previous `subscriptions.json` file.
   This allows you to quickly find new entries.
+
+### Review your subscriptions
+
+Because the subscriptions file can be quite lengthy, here's a shell one-liner so you can scroll through them by status:
+
+```shell
+jq -rc '.[] | [.status, .repo] | @tsv' subscriptions.json | sort | column -t | less
+```
 
 ### Ignored repos
 
