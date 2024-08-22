@@ -1,1 +1,1 @@
-# gh-notifications-manager
+# GitHub notifications manager

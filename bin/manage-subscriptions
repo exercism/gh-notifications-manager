@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+
+# This script is used to manage the user's subscriptions to Exercism repos.
+# The goal of this is to reduce the number of notifications on gets.
+#
+# The script takes one (required) argument for the action to perform:
+# - 'export': export the user's subscriptions to the 'manage-notifications.json` file
+# - 'update': update the user's subscriptions based on the 'manage-notifications.json` file
+# - 'list': list the user's subscriptions from the 'manage-notifications.json` file
+# - 'new': list the user's new subscriptions from the 'manage-notifications.json` file
+# - 'unsubscribe-new': change the status of new subscriptions from 'SUBSCRIBED' to 'UNSUBSCRIBED' in the `manage-notifications.json` file
+#
+# Example: export the subscriptions
+# bin/manage-notifications export
+#
+# Example: update the subscriptions
+# bin/manage-notifications update
+
+help_and_exit() {
+    echo >&2 "Manage the user's subscriptions to Exercism repos."
+    echo >&2 "Usage: ${0} <export|update|list|new|unsubscribe-new>"
+    exit 1
+}
+
+die() { echo >&2 "$*"; exit 1; }
+
+required_tool() {
+    command -v "$1" >/dev/null 2>&1 ||
+        die "${1} is required but not installed. Please install it and make sure it's in your PATH."
+}
+
+require_subscriptions_file() {
+    [[ -f "${repo_subscriptions_file}" ]] || 
+        die "No '"${repo_subscriptions_file}"' file found. Please run '${0} export' first."
+}
+
+(( $# == 1 )) || help_and_exit
+
+required_tool gh
+required_tool jq
+
+repo_subscriptions_file="repo-subscriptions.json"
+
+download_subscriptions() {
+    gh api graphql --slurp --paginate -f query='
+        query ($endCursor: String) {
+            organization(login: "exercism") {
+                repositories(
+                    orderBy: {field: NAME, direction: ASC}
+                    after: $endCursor
+                    first: 100
+                ) {
+                    nodes {
+                        nameWithOwner
+                        viewerSubscription
+                    }
+                    pageInfo {
+                        hasNextPage
+                        endCursor
+                    }
+                }
+            }
+        }
+    }' | jq -r '[.[].data.organization.repositories.nodes[] | select(.viewerSubscription != "IGNORED")] | map({repo: .nameWithOwner, status: .viewerSubscription, new: true})'
+}
+
+list_subscriptions() {
+    require_subscriptions_file
+    jq -r -c 'map(.repo + ": " + .status) | .[]' "${repo_subscriptions_file}"
+}
+
+new_subscriptions() {
+    require_subscriptions_file
+    jq -r -c '[.[] | select(.new)] | map(.repo + ": " + .status) | .[]' "${repo_subscriptions_file}"
+}
+
+export_subscriptions() {
+    if [[ ! -f "${repo_subscriptions_file}" ]]; then
+        jq -r -c -n '[]' > "${repo_subscriptions_file}"
+    fi
+
+    download_subscriptions | jq --argjson existing_repos $(jq -c 'map(.repo)' "${repo_subscriptions_file}") '[.[] | . as $row | .new = ($existing_repos | any(index($row.repo)) | not)]' > "${repo_subscriptions_file}"
+}
+
+update_subscriptions() {
+    local repo
+    local status
+
+    require_subscriptions_file
+    current_subscriptions=$(download_subscriptions)
+
+    jq -c -r '.[]' "${repo_subscriptions_file}" | while read -r subscription; do
+        repo=$(echo "${subscription}" | jq -r '.repo')
+        status=$(echo "${subscription}" | jq -r '.status')
+        current_status=$(echo -e "${current_subscriptions}" | jq -r --arg repo "${repo}" '(map(select(.repo == $repo)) | map(.status) | first) // "IGNORE"')
+
+        if [[ "${status}" == "${current_status}" ]]; then
+            echo "${repo}: already up-to-date (skipped)"
+            continue
+        fi
+
+        case "${status}" in
+            "SUBSCRIBED")
+                echo "${repo}: notified of all conversations"
+                gh api --method PUT "/repos/${repo}/subscription" -F "subscribed=true" > /dev/null
+                ;;
+            "UNSUBSCRIBED")
+                echo "${repo}: only notified when participating or @mentioned"
+                gh api --method DELETE "/repos/${repo}/subscription" > /dev/null
+                ;;
+            "IGNORE")
+                echo "${repo}: never notified (ignored)"
+                gh api --method PUT "/repos/${repo}/subscription" -F "ignored=true" > /dev/null
+                ;;
+            *) die "Invalid status '${status}'" ;;
+        esac
+    done
+}
+
+unsubscribe_new() {
+    local tmp_file
+
+    require_subscriptions_file
+
+    tmp_file=$(mktemp)
+    jq '[.[] | if .new and .status == "SUBSCRIBED" then .status = "UNSUBSCRIBED" else . end]' "${repo_subscriptions_file}" > "${tmp_file}" && mv "${tmp_file}" "${repo_subscriptions_file}"
+    
+    echo "The new subscriptions have their status set to unsubscribed in the 'manage-notifications.json' file."
+    echo "To update the subscriptions in GitHub, run: bin/manage-notifications update"
+}
+
+case "${1}" in
+    "export") export_subscriptions ;;
+    "update") update_subscriptions ;;
+    "unsubscribe-new") unsubscribe_new ;;
+    "list") list_subscriptions ;;
+    "new") new_subscriptions ;;
+    *) help_and_exit ;;
+esac
