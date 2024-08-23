@@ -74,10 +74,10 @@ It is an array of objects, where each object has the following fields:
 
 ### Review your subscriptions
 
-Because the subscriptions file can be quite lengthy, here's a shell one-liner so you can scroll through them by status:
+Because the subscriptions file can be quite lengthy, you can scroll through them by status by running:
 
 ```shell
-jq -rc '.[] | [.status, .repo] | @tsv' subscriptions.json | sort | column -t | less
+bin/manage review
 ```
 
 ### Ignored repos

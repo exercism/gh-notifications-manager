@@ -6,6 +6,7 @@
 # The script takes one (required) argument for the action to perform:
 # - 'export': export the user's subscriptions to the 'manage-notifications.json` file
 # - 'update': update the user's subscriptions based on the 'manage-notifications.json` file
+# - 'review': review the user's subscriptions in the 'manage-notifications.json` file
 # - 'unsubscribe-new': change the status of new subscriptions from 'SUBSCRIBED' to 'UNSUBSCRIBED' in the `manage-notifications.json` file
 #
 # Example: export the subscriptions
@@ -16,7 +17,7 @@
 
 help_and_exit() {
     echo >&2 "Manage the user's notifications by setting the subscription status of Exercism repos."
-    echo >&2 "Usage: ${0} <export|update|unsubscribe-new>"
+    echo >&2 "Usage: ${0} <export|update|review|unsubscribe-new>"
     exit 1
 }
 
@@ -63,7 +64,7 @@ download_subscriptions() {
     }' | jq -r '[.[].data.organization.repositories.nodes[] | select(.viewerSubscription != "IGNORED")] | map({repo: .nameWithOwner, status: .viewerSubscription, new: true})'
 }
 
-export_subscriptions() {
+export() {
     if [[ ! -f "${subscriptions_file}" ]]; then
         jq -r -c -n '[]' > "${subscriptions_file}"
     fi
@@ -75,7 +76,7 @@ export_subscriptions() {
     echo "The subscriptions have been exported to the '${subscriptions_file}' file."
 }
 
-update_subscriptions() {
+update() {
     local repo
     local status
 
@@ -126,9 +127,14 @@ unsubscribe_new() {
     echo "To update the subscriptions in GitHub, run: '${0} update'"
 }
 
+review() {
+    jq -rc '.[] | [.status, .repo] | @tsv' "${subscriptions_file}" | sort | column -t | less
+}
+
 case "${1}" in
-    "export") export_subscriptions ;;
-    "update") update_subscriptions ;;
+    "export") export ;;
+    "update") update ;;
+    "review") review ;;
     "unsubscribe-new") unsubscribe_new ;;
     *) help_and_exit ;;
 esac
