@@ -32,6 +32,24 @@ The manage script requires these tools be installed:
 - [GitHub CLI](https://cli.github.com/): used to download and update subscriptions
 - [jq](https://jqlang.github.io/jq/): used to process the subscriptions which are stored in a JSON file
 
+## Configuring GitHub CLI
+
+As the manage script uses the [GitHub CLI](https://cli.github.com/) to access GitHub, please ensure that you're logged in with your GitHub account you're using for Exercism.
+
+There are two options:
+
+1. You've already authenticated the GitHub account you're using for Exercism, in which case you run:
+
+```shell
+gh auth switch -u <github_username_for_exercism>
+```
+
+2. You've not yet authenticated the GitHub account you're using for Exercism, in which case you run:
+
+```shell
+gh auth login
+```
+
 ## Export subscriptions
 
 To export the subscription status of Exercism repos you're subscribed to, run:
