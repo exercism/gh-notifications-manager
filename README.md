@@ -69,8 +69,16 @@ It is an array of objects, where each object has the following fields:
   - `"SUBSCRIBED"`: notified of all conversations
   - `"UNSUBSCRIBED"`: only notified when participating or @mentioned
   - `"IGNORE"`: never notified (ignored)
-- `new`: indicates if this repo wasn't in the previous `subscriptions.json` file.
-  This allows you to quickly find new entries.
+- `new`: allows you to quickly find new entries
+
+The `new` value is determined by looking at the current `subscriptions.json` file (i.e. the result of the last `export` action) _before_ the `export` action overwrites its contents.
+The `new` value is set to `true` when either:
+
+- The `subscriptions.json` file did not exist
+- The `subscriptions.json` file contained an entry for the repo
+
+In all other cases, the `new` value is set to `false`.
+The very first export will thus set the `new` field to `true` for all repos.
 
 ### Review your subscriptions
 
