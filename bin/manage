@@ -33,10 +33,17 @@ require_subscriptions_file() {
         die "No '${subscriptions_file}' file found. Please run '${0} export' first."
 }
 
+require_exercism_org_member() {
+    gh api /user/memberships/orgs/exercism >/dev/null 2>&1 ||
+        die $'The GitHub CLI\'s authenticated user is *not* a member of the Exercism GitHub organization.\nCheck the README.md file for information on how to fix this.'
+}
+
 (( $# == 1 )) || help_and_exit
 
 required_tool gh
 required_tool jq
+
+require_exercism_org_member
 
 subscriptions_file="subscriptions.json"
 
