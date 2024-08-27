@@ -34,11 +34,12 @@ The manage script requires these tools be installed:
 
 ## Configuring GitHub CLI
 
-As the manage script uses the [GitHub CLI](https://cli.github.com/) to access GitHub, please ensure that you're logged in with your GitHub account you're using for Exercism.
+As the manage script uses the [GitHub CLI](https://cli.github.com/) to access GitHub, the GitHub CLI's authenticated user must be a member of the Exercism GitHub organization.
+If it is not, the script will output an error message.
 
-There are two options:
+There are two possible fixes:
 
-1. You've already authenticated the GitHub account you're using for Exercism, in which case you run:
+1. You've previously authenticated the GitHub account you're using for Exercism, in which case you run:
 
 ```shell
 gh auth switch -u <github_username_for_exercism>
