@@ -29,7 +29,7 @@ bin/manage update          # Updates the changes on GitHub
 
 The manage script requires these tools be installed:
 
-- [GitHub CLI](https://cli.github.com/): used to download and update subscriptions
+- [GitHub CLI](https://cli.github.com/): used to download and update subscriptions (v2.48.0 or greater)
 - [jq](https://jqlang.github.io/jq/): used to process the subscriptions which are stored in a JSON file
 
 ## Configuring GitHub CLI
@@ -59,7 +59,7 @@ To export the subscription status of Exercism repos you're subscribed to, run:
 bin/manage export
 ```
 
-This will create a `subscriptions.json` file containing the Exercism repos and their subscription status.
+This will create a `subscriptions.json` file containing the (unarchived) Exercism repos and your subscription status.
 **It is recommended that you back up this file before continuining**.
 
 ### subscriptions.json file
