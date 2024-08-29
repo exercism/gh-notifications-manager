@@ -79,6 +79,8 @@ download_subscriptions() {
 export() {
     if [[ ! -f "${subscriptions_file}" ]]; then
         jq -r -c -n '[]' > "${subscriptions_file}"
+    elif [[ ! $(jq -e 'type=="array"' "${subscriptions_file}") ]]; then
+        die "The '${subscriptions_file}' file's root element is not a valid JSON array."
     fi
 
     echo "Exporting subscriptions..."
