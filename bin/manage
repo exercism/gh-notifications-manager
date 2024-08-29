@@ -65,6 +65,7 @@ download_subscriptions() {
                     nodes {
                         nameWithOwner
                         viewerSubscription
+                        isArchived
                     }
                     pageInfo {
                         hasNextPage
@@ -73,7 +74,7 @@ download_subscriptions() {
                 }
             }
         }
-    }' | jq -r '[.[].data.organization.repositories.nodes[] | select(.viewerSubscription != "IGNORED")] | map({repo: .nameWithOwner, status: .viewerSubscription, new: true})'
+    }' | jq -r '[.[].data.organization.repositories.nodes[] | select(.viewerSubscription != "IGNORED" and .isArchived | not)] | map({repo: .nameWithOwner, status: .viewerSubscription, new: true})'
 }
 
 export() {
