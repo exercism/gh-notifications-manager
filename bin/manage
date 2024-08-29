@@ -117,16 +117,19 @@ update() {
 
         case "${status}" in
             "SUBSCRIBED")
-                echo "${repo}: notified of all conversations"
+                echo "${repo}: notified of all conversations (updating)"
                 gh api --method PUT "repos/${repo}/subscription" -F "subscribed=true" > /dev/null
+                echo "${repo}: notified of all conversations (updated)"
                 ;;
             "UNSUBSCRIBED")
-                echo "${repo}: only notified when participating or @mentioned"
+                echo "${repo}: only notified when participating or @mentioned (updating)"
                 gh api --method DELETE "repos/${repo}/subscription" > /dev/null
+                echo "${repo}: only notified when participating or @mentioned (updated)"
                 ;;
             "IGNORE")
-                echo "${repo}: never notified (ignored)"
+                echo "${repo}: never notified/ignored (updating)"
                 gh api --method PUT "repos/${repo}/subscription" -F "ignored=true" > /dev/null
+                echo "${repo}: never notified/ignored (updated)"
                 ;;
             *) die "Invalid status '${status}'" ;;
         esac
