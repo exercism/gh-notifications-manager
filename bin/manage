@@ -77,14 +77,22 @@ download_subscriptions() {
 }
 
 export() {
+    local tmp_file
+
     if [[ ! -f "${subscriptions_file}" ]]; then
         jq -r -c -n '[]' > "${subscriptions_file}"
     fi
 
     echo "Exporting subscriptions..."
 
-    existing_repos=$(jq -c 'map(.repo)' "${subscriptions_file}")
-    download_subscriptions | jq --argjson existing_repos "${existing_repos}" '[.[] | . as $row | .new = ($existing_repos | any(index($row.repo)) | not)]' > "${subscriptions_file}"
+    (
+        tmp_file=$(mktemp)
+        trap 'rm -rf "${tmp_file}"' EXIT
+
+        existing_repos=$(jq -c 'map(.repo)' "${subscriptions_file}")
+        download_subscriptions | jq --argjson existing_repos "${existing_repos}" '[.[] | . as $row | .new = ($existing_repos | any(index($row.repo)) | not)]' > "${tmp_file}" && mv "${tmp_file}" "${subscriptions_file}"
+    )
+
     echo "The subscriptions have been exported to the '${subscriptions_file}' file."
 }
 
