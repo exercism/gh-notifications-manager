@@ -39,7 +39,7 @@ require_recent_gh() {
 }
 
 require_exercism_org_member() {
-    gh api /user/memberships/orgs/exercism >/dev/null 2>&1 ||
+    gh api user/memberships/orgs/exercism >/dev/null 2>&1 ||
         die $'The GitHub CLI\'s authenticated user is *not* a member of the Exercism GitHub organization.\nCheck the README.md file for information on how to fix this.'
 }
 
@@ -118,15 +118,15 @@ update() {
         case "${status}" in
             "SUBSCRIBED")
                 echo "${repo}: notified of all conversations"
-                gh api --method PUT "/repos/${repo}/subscription" -F "subscribed=true" > /dev/null
+                gh api --method PUT "repos/${repo}/subscription" -F "subscribed=true" > /dev/null
                 ;;
             "UNSUBSCRIBED")
                 echo "${repo}: only notified when participating or @mentioned"
-                gh api --method DELETE "/repos/${repo}/subscription" > /dev/null
+                gh api --method DELETE "repos/${repo}/subscription" > /dev/null
                 ;;
             "IGNORE")
                 echo "${repo}: never notified (ignored)"
-                gh api --method PUT "/repos/${repo}/subscription" -F "ignored=true" > /dev/null
+                gh api --method PUT "repos/${repo}/subscription" -F "ignored=true" > /dev/null
                 ;;
             *) die "Invalid status '${status}'" ;;
         esac
