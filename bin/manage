@@ -33,6 +33,11 @@ require_subscriptions_file() {
         die "No '${subscriptions_file}' file found. Please run '${0} export' first."
 }
 
+require_recent_gh() {
+    gh api --help | grep -e '--slurp' >/dev/null 2>&1 ||
+        die $'Your GitHub CLI is outdated and needs to be updated to v2.48.0 or greater.'
+}
+
 require_exercism_org_member() {
     gh api /user/memberships/orgs/exercism >/dev/null 2>&1 ||
         die $'The GitHub CLI\'s authenticated user is *not* a member of the Exercism GitHub organization.\nCheck the README.md file for information on how to fix this.'
@@ -42,7 +47,7 @@ require_exercism_org_member() {
 
 required_tool gh
 required_tool jq
-
+require_recent_gh
 require_exercism_org_member
 
 subscriptions_file="subscriptions.json"
