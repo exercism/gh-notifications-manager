@@ -31,6 +31,9 @@ required_tool() {
 require_subscriptions_file() {
     [[ -f "${subscriptions_file}" ]] || 
         die "No '${subscriptions_file}' file found. Please run '${0} export' first."
+
+    jq -e 'type == "array"' "${subscriptions_file}" >/dev/null 2>&1 ||
+        die "The '${subscriptions_file}' file's root element is not a valid JSON array."
 }
 
 require_recent_gh() {
@@ -79,9 +82,9 @@ download_subscriptions() {
 export() {
     if [[ ! -f "${subscriptions_file}" ]]; then
         jq -r -c -n '[]' > "${subscriptions_file}"
-    elif [[ ! $(jq -e 'type=="array"' "${subscriptions_file}") ]]; then
-        die "The '${subscriptions_file}' file's root element is not a valid JSON array."
     fi
+
+    require_subscriptions_file
 
     echo "Exporting subscriptions..."
 
