@@ -10,18 +10,42 @@ By running the script before and after joining the team, you can see which repos
 
 Explanations of the various functionality is detailed below, but an expected workflow looks like:
 
+#### 1. Get the repo!
 ```bash
 # Clone the repo
 gh repo clone exercism/gh-notifications-manager
 cd gh-notifications-manager
+```
 
-bin/manage export          # Creates a record of your subscriptions
+#### 2. Export your current notification preferences
+```bash
+bin/manage export
+```
 
-# Manually: Backup file
-# Manually: Join relevant teams
+This creates a `subscriptions.json`. 
+Back this file up!
+You'll want this copy of it later.
 
-bin/manage export          # Updates the record with new subscriptions
-bin/manage unsubscribe_new # Changes the state in the file to UNSUBSCRIBED for all new repos
+#### 3. Tell admins you're ready
+
+When you've done this, tell us and we'll add you to whatever teams you're being added to.
+This will likely subscribe you to lots of repos.
+
+#### 4. Reset your notifications
+
+If your original `subscriptions.json` file contains all Exercism repos (which it seems to for lots of people) then you can simply run:
+```bash
+bin/manage update
+```
+
+This will sync GitHub back to your original file, effectively undoing all the new notification subscriptions you just had.
+
+**Alternatively,** if your old file only had repositiories you were subscribed to in it, you can now re-export, and the file will be updated with all the new repos.
+You can then run the `unsubscribe_new` command to update their statuses in the file, and then `update` to sync GitHub:
+
+```bash
+bin/manage export          # Updates subscriptions.json with new subscriptions
+bin/manage unsubscribe_new # Changes the state of new repos to be UNSUBSCRIBED
 bin/manage update          # Updates the changes on GitHub
 ```
 
