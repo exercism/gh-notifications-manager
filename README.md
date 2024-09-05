@@ -10,30 +10,32 @@ By running the script before and after joining the team, you can see which repos
 
 Explanations of the various functionality is detailed below, but an expected workflow looks like:
 
-#### 1. Get the repo!
+### 1. Get the repo!
+
 ```bash
-# Clone the repo
 gh repo clone exercism/gh-notifications-manager
 cd gh-notifications-manager
 ```
 
-#### 2. Export your current notification preferences
+### 2. Export your current notification preferences
+
 ```bash
 bin/manage export
 ```
 
-This creates a `subscriptions.json`. 
-Back this file up!
-You'll want this copy of it later.
+This creates a `subscriptions.json`.
+Back this file up, as you'll want this copy of it later!
 
-#### 3. Tell admins you're ready
+### 3. Tell admins you're ready
 
 When you've done this, tell us and we'll add you to whatever teams you're being added to.
-This will likely subscribe you to lots of repos.
+This will likely subscribe you to lots of new repos.
 
-#### 4. Reset your notifications
+### 4. Reset your notifications
 
-If your original `subscriptions.json` file contains all Exercism repos (which it seems to for lots of people) then you can simply run:
+An early version of this script had a bug where archived repos were also exported to the `subscriptions.json` file.
+If your original `subscriptions.json` file contains more Exercism repos than you expected then you can simply run:
+
 ```bash
 bin/manage update
 ```
