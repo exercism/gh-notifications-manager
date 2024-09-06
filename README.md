@@ -165,3 +165,7 @@ This will update the `subscriptions.json` file and changes the `status` field fr
 
 Note: this will _not_ update the GitHub repo's subscription status.
 For that, you'll need to run the [update command](#update-subscriptions).
+
+## Updating to latest version
+
+Please make sure to always run the latest version of the `bin/manage` script by running `git pull` first.
