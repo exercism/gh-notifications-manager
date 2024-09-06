@@ -55,26 +55,25 @@ subscriptions_file="subscriptions.json"
 download_subscriptions() {
     # shellcheck disable=SC2016
     gh api graphql --slurp --paginate -f query='
-        query ($endCursor: String) {
-            organization(login: "exercism") {
-                repositories(
-                    orderBy: {field: NAME, direction: ASC}
-                    after: $endCursor
-                    first: 100
-                ) {
-                    nodes {
-                        nameWithOwner
-                        viewerSubscription
-                        isArchived
-                    }
-                    pageInfo {
-                        hasNextPage
-                        endCursor
-                    }
-                }
+      query ($endCursor: String) {
+        search(
+          query: "org:exercism archived:false"
+          type: REPOSITORY
+          first: 100
+          after: $endCursor
+        ) {
+          nodes {
+            ... on Repository {
+              nameWithOwner
+              viewerSubscription
             }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
         }
-    }' | jq -r '[.[].data.organization.repositories.nodes[] | select(.viewerSubscription != "IGNORED" and .isArchived | not)] | map({repo: .nameWithOwner, status: .viewerSubscription, new: true})'
+      }' | jq -r '[.[].data.search.nodes[] | select(.viewerSubscription != "IGNORED")] | map({repo: .nameWithOwner, status: .viewerSubscription, new: true}) | sort_by(.repo)'
 }
 
 export() {
