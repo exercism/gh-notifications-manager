@@ -180,6 +180,12 @@ For that, you'll need to run the [update command](#update-subscriptions).
 ## Change status of repos with a specific topic
 
 Each repo in the `subscriptions.json` file also contains its topics.
+If your `subscriptions.json` file does _not_ contain a repo's topics, please run:
+
+```bash
+bin/manage update
+```
+
 There are three actions that allow you to change the repo status for all repos that contain a specific topic:
 
 - `bin/manage unsubscribe-topic <topic>`: set status to `"UNSUBSCRIBED"` for repos
