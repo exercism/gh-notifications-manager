@@ -4,20 +4,26 @@
 # The goal of this is to reduce the number of notifications on gets.
 #
 # The script takes one (required) argument for the action to perform:
-# - 'export': export the user's subscriptions to the 'manage-notifications.json` file
-# - 'update': update the user's subscriptions based on the 'manage-notifications.json` file
-# - 'review': review the user's subscriptions in the 'manage-notifications.json` file
-# - 'unsubscribe-new': change the status of new subscriptions from 'SUBSCRIBED' to 'UNSUBSCRIBED' in the `manage-notifications.json` file
+# - 'export': export the user's subscriptions to the 'subscriptions.json` file
+# - 'update': update the user's subscriptions based on the 'subscriptions.json` file
+# - 'review': review the user's subscriptions in the 'subscriptions.json` file
+# - 'unsubscribe-new': change the status of new subscriptions from 'SUBSCRIBED' to 'UNSUBSCRIBED' in the `subscriptions.json` file
+# - 'unsubscribe-topic': change the status of subscriptions with a specific topic to 'UNSUBSCRIBED' in the `subscriptions.json` file
+# - 'subscribe-topic': change the status of subscriptions with a specific topic to 'SUBSCRIBED' in the `subscriptions.json` file
+# - 'ignore-topic': change the status of subscriptions with a specific topic to 'IGNORED' in the `subscriptions.json` file
 #
 # Example: export the subscriptions
 # bin/manage export
 #
 # Example: update the subscriptions
 # bin/manage update
+#
+# Example: unsubscribe from all test-runner repos
+# bin/manage unsubscribe-topic exercism-test-runner
 
 help_and_exit() {
     echo >&2 "Manage the user's notifications by setting the subscription status of Exercism repos."
-    echo >&2 "Usage: ${0} <export|update|review|unsubscribe-new>"
+    echo >&2 "Usage: ${0} <export|update|review|unsubscribe-new|unsubscribe-topic|subscribe-topic|ignore-topic|>"
     exit 1
 }
 
@@ -43,12 +49,21 @@ require_exercism_org_member() {
         die $'The GitHub CLI\'s authenticated user is *not* a member of the Exercism GitHub organization.\nCheck the README.md file for information on how to fix this.'
 }
 
-(( $# == 1 )) || help_and_exit
+require_topic() {
+  (( $# >= 2 )) || die "A topic is required to be passed as a second argument."
+  "${2}"
+}
+
+(( $# >= 1 )) || help_and_exit
 
 required_tool gh
 required_tool jq
 require_recent_gh
 require_exercism_org_member
+
+unsubscribed_status="UNSUBSCRIBED"
+subscribed_status="SUBSCRIBED"
+ignored_status="IGNORED"
 
 subscriptions_file="subscriptions.json"
 
@@ -80,8 +95,8 @@ download_subscriptions() {
             endCursor
           }
         }
-      }' | jq -r '
-        [ .[].data.search.nodes[] | select(.viewerSubscription != "IGNORED") ]
+      }' | jq --arg ignored "${ignored_status}" -r '
+        [ .[].data.search.nodes[] | select(.viewerSubscription != $ignored) ]
         | map({repo: .nameWithOwner, status: .viewerSubscription, topics: .repositoryTopics.nodes | map(.topic.name), new: true})
         | sort_by(.repo)'
 }
@@ -126,17 +141,17 @@ update() {
         fi
 
         case "${status}" in
-            "SUBSCRIBED")
+            "${subscribed_status}")
                 echo "${repo}: notified of all conversations (updating)"
                 gh api --method PUT "repos/${repo}/subscription" -F "subscribed=true" > /dev/null
                 echo "${repo}: notified of all conversations (updated)"
                 ;;
-            "UNSUBSCRIBED")
+            "${unsubscribed_status}")
                 echo "${repo}: only notified when participating or @mentioned (updating)"
                 gh api --method DELETE "repos/${repo}/subscription" > /dev/null
                 echo "${repo}: only notified when participating or @mentioned (updated)"
                 ;;
-            "IGNORE")
+            "${ignored_status}")
                 echo "${repo}: never notified/ignored (updating)"
                 gh api --method PUT "repos/${repo}/subscription" -F "ignored=true" > /dev/null
                 echo "${repo}: never notified/ignored (updated)"
@@ -154,9 +169,9 @@ unsubscribe_new() {
     require_subscriptions_file
 
     tmp_file=$(mktemp)
-    jq '[.[] | if .new and .status == "SUBSCRIBED" then .status = "UNSUBSCRIBED" else . end]' "${subscriptions_file}" > "${tmp_file}" && mv "${tmp_file}" "${subscriptions_file}"
+    jq --arg subscribed "${subscribed_status}" --arg unsubscribed "${unsubscribed_status}" '[.[] | if .new and .status == $subscribed then .status = $unsubscribed else . end]' "${subscriptions_file}" > "${tmp_file}" && mv "${tmp_file}" "${subscriptions_file}"
     
-    echo "The new subscriptions with status 'SUBSCRIBED' have their status changed to 'UNSUBSCRIBED' in the '${subscriptions_file}' file."
+    echo "The new subscriptions with status '${subscribed_status}' have their status changed to '${unsubscribed_status}' in the '${subscriptions_file}' file."
     echo "To update the subscriptions in GitHub, run: '${0} update'"
 }
 
@@ -164,10 +179,36 @@ review() {
     jq -rc '.[] | [.status, .repo] | @tsv' "${subscriptions_file}" | sort | column -t | less
 }
 
+change_topic_status() {
+  local topic
+  local status
+  local tmp_file
+
+  require_subscriptions_file
+
+  topic="${1}"
+  status="${2}"
+
+  if [[ -z "${topic}" ]]; then
+      die "A topic is required to be passed as a second argument."
+  fi
+
+  tmp_file=$(mktemp)
+  jq --arg topic "${topic}" --arg status "${status}" '[.[] | if .topics | index($topic) then .status = $status else . end]' "${subscriptions_file}" > "${tmp_file}" && mv "${tmp_file}" "${subscriptions_file}"
+  
+  echo "The subscriptions with topic '${topic}' have their status changed to '${status}' in the '${subscriptions_file}' file."
+  echo "To update the subscriptions in GitHub, run: '${0} update'"
+}
+
+topic="${2}"
+
 case "${1}" in
     "export") export ;;
     "update") update ;;
     "review") review ;;
     "unsubscribe-new") unsubscribe_new ;;
+    "unsubscribe-topic") change_topic_status "${topic}" "${unsubscribed_status}" ;;
+    "subscribe-topic") change_topic_status "${topic}" "${subscribed_status}" ;;
+    "ignore-topic") change_topic_status "${topic}" "${ignored_status}" ;;
     *) help_and_exit ;;
 esac
