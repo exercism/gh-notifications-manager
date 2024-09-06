@@ -177,6 +177,30 @@ This will update the `subscriptions.json` file and changes the `status` field fr
 Note: this will _not_ update the GitHub repo's subscription status.
 For that, you'll need to run the [update command](#update-subscriptions).
 
+## Change status of repos with a specific topic
+
+Each repo in the `subscriptions.json` file also contains its topics.
+There are three actions that allow you to change the repo status for all repos that contain a specific topic:
+
+- `bin/manage unsubscribe-topic <topic>`: set status to `"UNSUBSCRIBED"` for repos
+  in the `subscriptions.json` file
+- `bin/manage subscribe-topic <topic>`: change the status of subscriptions with a specific topic to `"SUBSCRIBED"` in the `subscriptions.json` file
+- `bin/manage ignore-topic <topic>`: change the status of subscriptions with a specific topic to `"IGNORED"` in the `subscriptions.json` file
+
+These are some of the more useful topics to use:
+
+- `exercism-track`: for track repos
+- `exercism-test-runner`: for test runner repos
+- `exercism-analyzer`: for analyzer repos
+- `exercism-representer`: for representer repos
+- `wip-track`: repo for track with category `wip-track`
+- `unmaintained`: repo for track with category `unmaintained`
+- `maintained-solitary`: repo for track with category `maintained-solitary`
+- `maintained-autonomous`: repo for track with category `maintained-autonomous`
+- `maintained`:repo for track with category `maintained`
+
+As an example, you can set the status to `"UNSUBSCRIBED"` for all test runner repos by running `bin/manage unsubscribe-topic exercism-test-runner`.
+
 ## Updating to latest version
 
 Please make sure to always run the latest version of the `bin/manage` script by running `git pull` first.

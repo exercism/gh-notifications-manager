@@ -4,20 +4,26 @@
 # The goal of this is to reduce the number of notifications on gets.
 #
 # The script takes one (required) argument for the action to perform:
-# - 'export': export the user's subscriptions to the 'manage-notifications.json` file
-# - 'update': update the user's subscriptions based on the 'manage-notifications.json` file
-# - 'review': review the user's subscriptions in the 'manage-notifications.json` file
-# - 'unsubscribe-new': change the status of new subscriptions from 'SUBSCRIBED' to 'UNSUBSCRIBED' in the `manage-notifications.json` file
+# - 'export': export the user's subscriptions to the 'subscriptions.json` file
+# - 'update': update the user's subscriptions based on the 'subscriptions.json` file
+# - 'review': review the user's subscriptions in the 'subscriptions.json` file
+# - 'unsubscribe-new': change the status of new subscriptions from 'SUBSCRIBED' to 'UNSUBSCRIBED' in the `subscriptions.json` file
+# - 'unsubscribe-topic': change the status of subscriptions with a specific topic to 'UNSUBSCRIBED' in the `subscriptions.json` file
+# - 'subscribe-topic': change the status of subscriptions with a specific topic to 'SUBSCRIBED' in the `subscriptions.json` file
+# - 'ignore-topic': change the status of subscriptions with a specific topic to 'IGNORED' in the `subscriptions.json` file
 #
 # Example: export the subscriptions
 # bin/manage export
 #
 # Example: update the subscriptions
 # bin/manage update
+#
+# Example: unsubscribe from all test-runner repos
+# bin/manage unsubscribe-topic exercism-test-runner
 
 help_and_exit() {
     echo >&2 "Manage the user's notifications by setting the subscription status of Exercism repos."
-    echo >&2 "Usage: ${0} <export|update|review|unsubscribe-new>"
+    echo >&2 "Usage: ${0} <export|update|review|unsubscribe-new|unsubscribe-topic|subscribe-topic|ignore-topic|>"
     exit 1
 }
 
@@ -164,10 +170,15 @@ review() {
     jq -rc '.[] | [.status, .repo] | @tsv' "${subscriptions_file}" | sort | column -t | less
 }
 
+update_topic_repos() {
+    
+}
+
 case "${1}" in
     "export") export ;;
     "update") update ;;
     "review") review ;;
     "unsubscribe-new") unsubscribe_new ;;
+    "unsubscribe-topc") unsubscribe_new ;;
     *) help_and_exit ;;
 esac
