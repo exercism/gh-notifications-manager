@@ -66,6 +66,13 @@ download_subscriptions() {
             ... on Repository {
               nameWithOwner
               viewerSubscription
+              repositoryTopics(first: 100) {
+                nodes {
+                  topic {
+                    name
+                  }
+                }
+              }
             }
           }
           pageInfo {
@@ -73,7 +80,10 @@ download_subscriptions() {
             endCursor
           }
         }
-      }' | jq -r '[.[].data.search.nodes[] | select(.viewerSubscription != "IGNORED")] | map({repo: .nameWithOwner, status: .viewerSubscription, new: true}) | sort_by(.repo)'
+      }' | jq -r '
+        [ .[].data.search.nodes[] | select(.viewerSubscription != "IGNORED") ]
+        | map({repo: .nameWithOwner, status: .viewerSubscription, topics: .repositoryTopics.nodes | map(.topic.name), new: true})
+        | sort_by(.repo)'
 }
 
 export() {

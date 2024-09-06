@@ -97,11 +97,22 @@ The downloaded `subscriptions.json` file will look like this:
   {
     "repo": "exercism/csharp",
     "status": "UNSUBSCRIBED",
+    "topics": [
+      "exercism-track",
+      "community-contributions-paused",
+      "maintained-solitary"
+    ],
     "new": false
   },
   {
     "repo": "exercism/csharp-test-runner",
     "status": "SUBSCRIBED",
+    "topics": [
+      "exercism-test-runner",
+      "exercism-tooling",
+      "community-contributions-paused",
+      "maintained-solitary"
+    ],
     "new": false
   }
 ]
